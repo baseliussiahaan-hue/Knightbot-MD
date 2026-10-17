@@ -169,6 +169,46 @@ It is lightweight and can be easily customized to add more commands as per your 
 
 ---
 
+## 👥 Running Multiple Accounts
+
+By default `node index.js` runs a single WhatsApp account. To run several accounts at once (each with its own session, store file, and pairing code), use the multi-account launcher instead:
+
+1. **Create your account list:**
+
+    ```bash
+    cp data/accounts.example.json data/accounts.json
+    ```
+
+    Edit `data/accounts.json` and list every account you want to run:
+
+    ```json
+    [
+      { "id": "akun1", "phoneNumber": "6281234567890" },
+      { "id": "akun2", "phoneNumber": "6289876543210" }
+    ]
+    ```
+
+    - `id`: a short unique name for the account (letters, numbers, `-`, `_`).
+    - `phoneNumber`: that account's WhatsApp number, country code first, no `+` or spaces.
+
+2. **Start all accounts:**
+
+    ```bash
+    npm run start:multi
+    ```
+
+    Each account logs in as its own process. On first run, a pairing code is printed for each one, labeled `[akun1]`, `[akun2]`, etc. — open WhatsApp on that number, go to **Linked Devices > Link a Device**, and enter the matching code. After pairing, each account reconnects on its own using its saved session.
+
+Each account keeps its own files, so accounts never interfere with each other:
+
+- `session/<id>/` — that account's login session
+- `baileys_store_<id>.json` — that account's message store
+- `temp_<id>/` — that account's scratch/download folder
+
+Commands, settings, and group handling behave the same as a single account — this only changes which WhatsApp number a given process logs into.
+
+---
+
 ## ☕ Support Me
 
 <div align="center">

@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 // Redirect temp storage away from system /tmp
-const customTemp = path.join(process.cwd(), 'temp');
+// Keep each account's scratch files separate when running multiple accounts
+// from the same working directory (see multi-start.js).
+const customTemp = path.join(process.cwd(), process.env.ACCOUNT_ID ? `temp_${process.env.ACCOUNT_ID}` : 'temp');
 if (!fs.existsSync(customTemp)) fs.mkdirSync(customTemp, { recursive: true });
 process.env.TMPDIR = customTemp;
 process.env.TEMP = customTemp;

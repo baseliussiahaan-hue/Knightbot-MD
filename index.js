@@ -70,10 +70,18 @@ setInterval(() => {
     }
 }, 30_000) // check every 30 seconds
 
-let phoneNumber = "911234567890"
+// Multi-account support: each bot process is one WhatsApp account.
+// Set ACCOUNT_ID / SESSION_DIR / PHONE_NUMBER (see multi-start.js) to run
+// several accounts at once, each with its own session + store file.
+// With none of these set, behavior is identical to running a single account.
+const ACCOUNT_ID = process.env.ACCOUNT_ID || 'default'
+const SESSION_DIR = process.env.SESSION_DIR || './session'
+const logPrefix = process.env.ACCOUNT_ID ? chalk.cyan(`[${ACCOUNT_ID}] `) : ''
+
+let phoneNumber = process.env.PHONE_NUMBER || "911234567890"
 let owner = JSON.parse(fs.readFileSync('./data/owner.json'))
 
-global.botname = "KNIGHT BOT"
+global.botname = process.env.BOT_NAME || "KNIGHT BOT"
 global.themeemoji = "•"
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
@@ -93,7 +101,7 @@ const question = (text) => {
 async function startXeonBotInc() {
     try {
         let { version, isLatest } = await fetchLatestBaileysVersion()
-        const { state, saveCreds } = await useMultiFileAuthState(`./session`)
+        const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR)
         const msgRetryCounterCache = new NodeCache()
 
         const XeonBotInc = makeWASocket({
@@ -236,7 +244,7 @@ async function startXeonBotInc() {
             try {
                 let code = await XeonBotInc.requestPairingCode(phoneNumber)
                 code = code?.match(/.{1,4}/g)?.join("-") || code
-                console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
+                console.log(logPrefix + chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
                 console.log(chalk.yellow(`\nPlease enter this code in your WhatsApp app:\n1. Open WhatsApp\n2. Go to Settings > Linked Devices\n3. Tap "Link a Device"\n4. Enter the code shown above`))
             } catch (error) {
                 console.error('Error requesting pairing code:', error)
@@ -259,7 +267,7 @@ async function startXeonBotInc() {
         
         if (connection == "open") {
             console.log(chalk.magenta(` `))
-            console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
+            console.log(logPrefix + chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
 
             try {
                 const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
@@ -298,8 +306,8 @@ async function startXeonBotInc() {
             
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 try {
-                    rmSync('./session', { recursive: true, force: true })
-                    console.log(chalk.yellow('Session folder deleted. Please re-authenticate.'))
+                    rmSync(SESSION_DIR, { recursive: true, force: true })
+                    console.log(logPrefix + chalk.yellow('Session folder deleted. Please re-authenticate.'))
                 } catch (error) {
                     console.error('Error deleting session:', error)
                 }
